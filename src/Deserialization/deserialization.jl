@@ -246,7 +246,7 @@ function map_summaries(fun::Function, logdir; purge=true, tags=nothing, steps=no
         push!(s, tags)
         tags = s
     end
-
+    done_if_missing = nothing
     for event_file in TBEventFileCollectionIterator(logdir, purge=purge)
         for event in event_file
             # if event.what contains no summary, don't bother processing this event
@@ -258,8 +258,11 @@ function map_summaries(fun::Function, logdir; purge=true, tags=nothing, steps=no
             iter = SummaryDeserializingIterator(event.what.value, smart)
             for (name, val) in iter
                 tags !== nothing && name ∉ tags && continue
-                fun(name, step, val)
+
+                done_if_missing = fun(name, step, val)
+                ismissing(done_if_missing) && break
             end
+            ismissing(done_if_missing) && break
         end
     end
 end
